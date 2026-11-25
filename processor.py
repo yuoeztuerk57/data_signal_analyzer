@@ -19,9 +19,37 @@ class DataProcessor:
         self.raw_data = daten
         self.processed_data = self.raw_data.copy()
         return self.raw_data
+    def apply_moving_average(self, daten, window_size=50):
+        if window_size <= 1:
+            return daten.copy()
+        kernel = np.ones(window_size) / window_size
+        return np.convolve(daten, kernel, mode="same")
+    def normalize(self, daten):
+        min_wert = np.min(daten)
+        max_wert = np.max(daten)
+        if max_wert == min_wert:
+            return np.zeros_like(daten)
+        return (daten - min_wert) / (max_wert - min_wert)
+    def downsample(self, daten, step=100):
+        if step <= 1:
+            return daten
+        return daten[::step]
+    def process(self, window_size=1, do_normalize=False):
+        if self.raw_data is None:
+            return None
+        ergebnis = self.apply_moving_average(self.raw_data, window_size)
+        if do_normalize:
+            ergebnis = self.normalize(ergebnis)
+        self.processed_data = ergebnis
+        return self.processed_data
 
 if __name__ == "__main__":
     processor = DataProcessor()
     signal = processor.generate_signal()
     print("Anzahl Punkte:", signal.shape)
     print("Erste 5 Werte:", np.round(signal[:5], 3))
+    gefiltert = processor.process(window_size=100, do_normalize=True)
+    vorschau = processor.downsample(gefiltert, step=100)
+    print("Länge nach Filter:", gefiltert.shape)
+    print("Min / Max:", round(np.min(gefiltert), 2), "/", round(np.max(gefiltert), 2))
+    print("Länge nach Downsampling:", vorschau.shape)
