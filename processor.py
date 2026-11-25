@@ -42,6 +42,24 @@ class DataProcessor:
             ergebnis = self.normalize(ergebnis)
         self.processed_data = ergebnis
         return self.processed_data
+    def save_npz(self, dateipfad):
+        if self.raw_data is None or self.processed_data is None:
+            raise ValueError("Keine Daten zum Speichern vorhanden.")
+        if not dateipfad.endswith(".npz"):
+            dateipfad += ".npz"
+        np.savez_compressed(
+            dateipfad,
+            raw_data=self.raw_data,
+            processed_data=self.processed_data
+        )
+    def load_npz(self, dateipfad):
+        with np.load(dateipfad) as archiv:
+            self.raw_data = archiv["raw_data"]
+            if "processed_data" in archiv:
+                self.processed_data = archiv["processed_data"]
+            else:
+                self.processed_data = self.raw_data.copy()
+        return self.processed_data
 
 if __name__ == "__main__":
     processor = DataProcessor()
